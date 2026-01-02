@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Venta de Pollo Fresco</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #fff8ee;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      text-align: center;
+    }
+
+    h1 {
+      color: #d35400;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+
+    select, input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      font-size: 16px;
+    }
+
+    .precio {
+      margin-top: 20px;
+      font-size: 20px;
+      background: #fef5e7;
+      padding: 15px;
+      border-radius: 8px;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>🐔 Venta de Pollo Fresco</h1>
+
+    <label for="parte">Parte del pollo</label>
+    <select id="parte" onchange="calcular()">
+      <option value="">Selecciona una opción</option>
+      <option value="80">Pollo entero – $80/kg</option>
+      <option value="95">Surtido – $95/kg</option>
+      <option value="85">Alas – $85/kg</option>
+      <option value="100">Pierna y muslo – $100/kg</option>
+      <option value="135">Pechuga – $135/kg</option>
+      <option value="35">Retazo – $35/kg</option>
+      <option value="15">Menudencias – $15/kg</option>
+    </select>
+
+    <label for="kg">Kilogramos</label>
+    <input type="number" id="kg" min="0" step="0.1" placeholder="Ej. 2.5" oninput="calcular()">
+
+    <div class="precio" id="total">
+      Total: $0.00
+    </div>
+  </div>
+
+  <script>
+    function calcular() {
+      const precioKg = document.getElementById("parte").value;
+      const kg = document.getElementById("kg").value;
+
+      if (precioKg && kg > 0) {
+        const total = precioKg * kg;
+        document.getElementById("total").innerText =
+          "Total: $" + total.toFixed(2);
+      } else {
+        document.getElementById("total").innerText =
+          "Total: $0.00";
+      }
+    }
+  </script>
+
+</body>
+</html>
