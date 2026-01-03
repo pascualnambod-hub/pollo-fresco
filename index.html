@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Venta de Pollo Fresco</title>
+  <title>AVICOLA EL PEDREGAL</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
@@ -20,7 +20,7 @@
       padding: 25px;
       border-radius: 10px;
       width: 100%;
-      max-width: 400px;
+      max-width: 420px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.15);
       text-align: center;
     }
@@ -36,64 +36,134 @@
       font-weight: bold;
     }
 
-    select, input {
+    select, input, button {
       width: 100%;
       padding: 10px;
       margin-top: 5px;
       font-size: 16px;
     }
 
-    .precio {
+    button {
+      background: #d35400;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      margin-top: 15px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #b84300;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin-top: 15px;
+    }
+
+   li {
+  background: #fef5e7;
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.item-texto {
+  flex: 1; /* 👉 hace que el texto ocupe todo el espacio */
+  text-align: left;
+}
+
+    .total {
       margin-top: 20px;
       font-size: 20px;
-      background: #fef5e7;
-      padding: 15px;
-      border-radius: 8px;
       font-weight: bold;
       color: #2c3e50;
     }
+
+    .eliminar {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+}
   </style>
 </head>
 <body>
 
-  <div class="container">
-    <h1>🐔 Venta de Pollo Fresco</h1>
+<div class="container">
+  <h1>🐔 AVICOLA EL PEDREGAL</h1>
 
-    <label for="parte">Parte del pollo</label>
-    <select id="parte" onchange="calcular()">
-      <option value="">Selecciona una opción</option>
-      <option value="80">Pollo entero – $80/kg</option>
-      <option value="95">Surtido – $95/kg</option>
-      <option value="85">Alas – $85/kg</option>
-      <option value="100">Pierna y muslo – $100/kg</option>
-      <option value="135">Pechuga – $135/kg</option>
-      <option value="35">Retazo – $35/kg</option>
-      <option value="15">Menudencias – $15/kg</option>
-    </select>
+  <label>CONCEPTO</label>
+  <select id="parte">
+    <option value="">Selecciona</option>
+    <option value="80">Pollo entero</option>
+    <option value="95">Surtido</option>
+    <option value="85">Alas</option>
+    <option value="100">Pierna y muslo</option>
+    <option value="135">Pechuga</option>
+    <option value="35">Retazo</option>
+    <option value="15">Menudencias</option>
+  </select>
 
-    <label for="kg">Kilogramos</label>
-    <input type="number" id="kg" min="0" step="0.1" placeholder="Ej. 2.5" oninput="calcular()">
+  <label>Kilogramos</label>
+  <input type="number" id="kg" min="0.1" step="0.1" placeholder="Ej. 2.5">
 
-    <div class="precio" id="total">
-      Total: $0.00
-    </div>
+  <button onclick="agregar()">➕ Agregar al pedido</button>
+
+  <ul id="lista"></ul>
+
+  <div class="total">
+    Total general: $<span id="total">0.00</span>
   </div>
+</div>
 
-  <script>
-    function calcular() {
-      const precioKg = document.getElementById("parte").value;
-      const kg = document.getElementById("kg").value;
+<script>
+  let totalGeneral = 0;
 
-      if (precioKg && kg > 0) {
-        const total = precioKg * kg;
-        document.getElementById("total").innerText =
-          "Total: $" + total.toFixed(2);
-      } else {
-        document.getElementById("total").innerText =
-          "Total: $0.00";
-      }
+  function agregar() {
+    const select = document.getElementById("parte");
+    const kg = parseFloat(document.getElementById("kg").value);
+    const precioKg = parseFloat(select.value);
+    const nombre = select.options[select.selectedIndex].text;
+
+    if (!precioKg || !kg || kg <= 0) {
+      alert("Selecciona un producto y cantidad válida");
+      return;
     }
-  </script>
+
+    const subtotal = precioKg * kg;
+    totalGeneral += subtotal;
+
+    const li = document.createElement("li");
+    li.innerHTML = `
+      ${nombre} (${kg} kg) - $${subtotal.toFixed(2)}
+      <button class="eliminar" onclick="eliminar(this, ${subtotal})">X</button>
+    `;
+
+    document.getElementById("lista").appendChild(li);
+    document.getElementById("total").innerText = totalGeneral.toFixed(2);
+
+    document.getElementById("kg").value = "";
+    select.value = "";
+  }
+
+  function eliminar(btn, subtotal) {
+    totalGeneral -= subtotal;
+    btn.parentElement.remove();
+    document.getElementById("total").innerText = totalGeneral.toFixed(2);
+  }
+</script>
 
 </body>
 </html>
