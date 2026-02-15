@@ -2,151 +2,209 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Registro Oficial de Liga</title>
+<title>Registro Liga</title>
+
 <style>
-body{font-family:Arial, sans-serif;background:#f2f4f8;margin:0;padding:20px}
-h1{text-align:center}
-.container{max-width:1000px;margin:auto}
-button{padding:6px 12px;border:none;border-radius:6px;cursor:pointer;margin:4px 0}
-.btn-main{background:#2563eb;color:white}
-.btn-edit{background:#16a34a;color:white}
-.btn-delete{background:#dc2626;color:white}
-.team{background:white;padding:12px;margin-bottom:15px;border-radius:10px;box-shadow:0 3px 8px rgba(0,0,0,0.1)}
-.team-header{font-weight:bold;font-size:18px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
-.players{display:none;margin-top:10px}
-.player{background:#e2e8f0;padding:6px;margin-bottom:5px;border-radius:6px;display:flex;justify-content:space-between;align-items:center}
-input{padding:6px;margin:3px 0}
-.admin-panel{display:none;background:white;padding:10px;border-radius:10px;margin-bottom:15px}
+body{
+    font-family: Arial;
+    background:#f4f4f4;
+    padding:20px;
+}
+h1{text-align:center;}
+button{
+    margin:3px;
+    padding:5px 10px;
+    cursor:pointer;
+}
+.team{
+    background:white;
+    margin:10px 0;
+    padding:10px;
+    border-radius:8px;
+    box-shadow:0 0 5px rgba(0,0,0,0.2);
+}
+.team h3{
+    cursor:pointer;
+    margin:0;
+}
+.players{
+    display:none;
+    margin-top:10px;
+}
+.player{
+    background:#e9e9e9;
+    padding:5px;
+    margin:5px 0;
+    border-radius:5px;
+}
+.hidden{display:none;}
+.counter-btn{
+    padding:2px 6px;
+    font-weight:bold;
+}
 </style>
 </head>
 <body>
 
-<div class="container">
-<h1>Sistema de Equipos y Jugadores</h1>
+<h1>Registro de Equipos</h1>
 
-<button class="btn-edit" onclick="activarModoEdicion()">Agregar / Editar</button>
-
-<div id="adminPanel" class="admin-panel">
-<h3>Agregar Equipo</h3>
-<input type="text" id="nuevoEquipo" placeholder="Nombre del equipo">
-<button class="btn-main" onclick="agregarEquipo()">Guardar Equipo</button>
-<hr>
+<button id="btnModo">🔐 Activar Modo Edición</button>
+<div id="adminPanel" class="hidden">
+    <button id="btnAgregarEquipo">➕ Agregar Equipo</button>
 </div>
 
-<div id="listaEquipos"></div>
-</div>
+<div id="contenedorEquipos"></div>
 
 <script>
-const PASSWORD = "1872";
+
 let modoEdicion = false;
 let equipos = JSON.parse(localStorage.getItem("equipos")) || [];
+let equiposAbiertos = {}; // GUARDA QUÉ EQUIPOS ESTÁN ABIERTOS
 
 function guardarDatos(){
-localStorage.setItem("equipos", JSON.stringify(equipos));
+    localStorage.setItem("equipos", JSON.stringify(equipos));
 }
 
-function activarModoEdicion(){
-let pw = prompt("Ingrese contraseña:");
-if(pw === PASSWORD){
-modoEdicion = true;
-document.getElementById("adminPanel").style.display = "block";
-alert("Modo edición activado");
-render();
-}else if(pw !== null){
-alert("Contraseña incorrecta");
-}
-}
+document.getElementById("btnModo").addEventListener("click", function(){
+    let pass = prompt("Ingrese contraseña:");
+    if(pass === "1872"){
+        modoEdicion = true;
+        document.getElementById("adminPanel").classList.remove("hidden");
+        alert("Modo edición activado");
+        renderizar();
+    }else{
+        alert("Contraseña incorrecta");
+    }
+});
 
-function agregarEquipo(){
-if(!modoEdicion) return;
-let nombre = document.getElementById("nuevoEquipo").value.trim();
-if(nombre === "") return;
-equipos.push({nombre:nombre,jugadores:[]});
-document.getElementById("nuevoEquipo").value="";
-guardarDatos();
-render();
-}
+document.getElementById("btnAgregarEquipo").addEventListener("click", function(){
+    let nombre = prompt("Nombre del equipo:");
+    if(nombre){
+        equipos.push({nombre:nombre, jugadores:[]});
+        guardarDatos();
+        renderizar();
+    }
+});
 
 function eliminarEquipo(index){
-if(!modoEdicion) return;
-if(confirm("¿Eliminar equipo completo?")){
-equipos.splice(index,1);
-guardarDatos();
-render();
-}
-}
-
-function agregarJugador(index){
-if(!modoEdicion) return;
-let nombre = document.getElementById("jugadorNombre-"+index).value.trim();
-let folio = document.getElementById("jugadorFolio-"+index).value.trim();
-if(nombre==="" || folio==="") return;
-equipos[index].jugadores.push({nombre:nombre,folio:folio});
-guardarDatos();
-render();
+    if(confirm("¿Eliminar equipo?")){
+        delete equiposAbiertos[index];
+        equipos.splice(index,1);
+        guardarDatos();
+        renderizar();
+    }
 }
 
-function eliminarJugador(teamIndex,playerIndex){
-if(!modoEdicion) return;
-if(confirm("¿Eliminar jugador?")){
-equipos[teamIndex].jugadores.splice(playerIndex,1);
-guardarDatos();
-render();
+function agregarJugador(indexEquipo){
+    let nombre = prompt("Nombre del jugador:");
+    let folio = prompt("Folio del jugador:");
+    if(nombre && folio){
+        equipos[indexEquipo].jugadores.push({
+            nombre:nombre,
+            folio:folio,
+            partidos:0
+        });
+        guardarDatos();
+        renderizar();
+    }
 }
+
+function eliminarJugador(iEquipo, iJugador){
+    if(confirm("¿Eliminar jugador?")){
+        equipos[iEquipo].jugadores.splice(iJugador,1);
+        guardarDatos();
+        renderizar();
+    }
+}
+
+function cambiarPartidos(iEquipo, iJugador, cambio){
+    if(!modoEdicion) return;
+    let jugador = equipos[iEquipo].jugadores[iJugador];
+    jugador.partidos += cambio;
+    if(jugador.partidos < 0) jugador.partidos = 0;
+    guardarDatos();
+    renderizar();
 }
 
 function toggleJugadores(index){
-let div = document.getElementById("players-"+index);
-div.style.display = div.style.display === "none" ? "block" : "none";
+    equiposAbiertos[index] = !equiposAbiertos[index];
+    renderizar();
 }
 
-function render(){
-let cont = document.getElementById("listaEquipos");
-cont.innerHTML="";
+function renderizar(){
+    let contenedor = document.getElementById("contenedorEquipos");
+    contenedor.innerHTML = "";
 
-if(equipos.length===0){
-cont.innerHTML="<p>No hay equipos registrados.</p>";
-return;
+    equipos.forEach((equipo, i) => {
+
+        let divEquipo = document.createElement("div");
+        divEquipo.className = "team";
+
+        let titulo = document.createElement("h3");
+        titulo.textContent = equipo.nombre;
+        titulo.onclick = () => toggleJugadores(i);
+        divEquipo.appendChild(titulo);
+
+        if(modoEdicion){
+            let btnAgregarJugador = document.createElement("button");
+            btnAgregarJugador.textContent = "➕ Agregar Jugador";
+            btnAgregarJugador.onclick = () => agregarJugador(i);
+            divEquipo.appendChild(btnAgregarJugador);
+
+            let btnEliminarEquipo = document.createElement("button");
+            btnEliminarEquipo.textContent = "🗑 Eliminar Equipo";
+            btnEliminarEquipo.onclick = () => eliminarEquipo(i);
+            divEquipo.appendChild(btnEliminarEquipo);
+        }
+
+        let divJugadores = document.createElement("div");
+        divJugadores.className = "players";
+
+        if(equiposAbiertos[i]){
+            divJugadores.style.display = "block";
+        }
+
+        equipo.jugadores.forEach((jugador, j) => {
+
+            let divJugador = document.createElement("div");
+            divJugador.className = "player";
+
+            divJugador.innerHTML = `
+                <strong>${jugador.nombre}</strong> |
+                Folio: ${jugador.folio} |
+                Partidos: ${jugador.partidos}
+            `;
+
+            if(modoEdicion){
+                let btnMas = document.createElement("button");
+                btnMas.textContent = "⬆";
+                btnMas.className = "counter-btn";
+                btnMas.onclick = () => cambiarPartidos(i,j,1);
+
+                let btnMenos = document.createElement("button");
+                btnMenos.textContent = "⬇";
+                btnMenos.className = "counter-btn";
+                btnMenos.onclick = () => cambiarPartidos(i,j,-1);
+
+                let btnEliminar = document.createElement("button");
+                btnEliminar.textContent = "❌";
+                btnEliminar.onclick = () => eliminarJugador(i,j);
+
+                divJugador.appendChild(btnMas);
+                divJugador.appendChild(btnMenos);
+                divJugador.appendChild(btnEliminar);
+            }
+
+            divJugadores.appendChild(divJugador);
+        });
+
+        divEquipo.appendChild(divJugadores);
+        contenedor.appendChild(divEquipo);
+    });
 }
 
-equipos.forEach((equipo,index)=>{
-let div = document.createElement("div");
-div.className="team";
+renderizar();
 
-div.innerHTML=`
-<div class="team-header" onclick="toggleJugadores(${index})">
-<span>${equipo.nombre}</span>
-${modoEdicion?`<button class="btn-delete" onclick="event.stopPropagation(); eliminarEquipo(${index})">Eliminar</button>`:""}
-</div>
-<div class="players" id="players-${index}" style="display:none">
-${equipo.jugadores.length===0?"<p>Sin jugadores registrados</p>":""}
-${equipo.jugadores.map((j,i)=>`
-<div class="player">
-<span>${j.nombre}</span>
-<div>
-<strong>Folio: ${j.folio}</strong>
-${modoEdicion?`<button class="btn-delete" onclick="eliminarJugador(${index},${i})">X</button>`:""}
-</div>
-</div>
-`).join("")}
-${modoEdicion?`
-<hr>
-<input type="text" id="jugadorNombre-${index}" placeholder="Nombre jugador">
-<input type="text" id="jugadorFolio-${index}" placeholder="Folio">
-<br>
-<button class="btn-main" onclick="agregarJugador(${index})">Guardar Jugador</button>
-`:""}
-</div>
-`;
-
-cont.appendChild(div);
-});
-}
-
-render();
 </script>
-
 </body>
 </html>
-
