@@ -1,169 +1,152 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>AVICOLA EL PEDREGAL</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <style>
-    body {
-      font-family: Arial, Helvetica, sans-serif;
-      background: #fff8ee;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-    }
-
-    .container {
-      background: white;
-      padding: 25px;
-      border-radius: 10px;
-      width: 100%;
-      max-width: 420px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-      text-align: center;
-    }
-
-    h1 {
-      color: #d35400;
-      margin-bottom: 20px;
-    }
-
-    label {
-      display: block;
-      margin-top: 15px;
-      font-weight: bold;
-    }
-
-    select, input, button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-      font-size: 16px;
-    }
-
-    button {
-      background: #d35400;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      margin-top: 15px;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background: #b84300;
-    }
-
-    ul {
-      list-style: none;
-      padding: 0;
-      margin-top: 15px;
-    }
-
-   li {
-  background: #fef5e7;
-  padding: 10px;
-  margin-bottom: 8px;
-  border-radius: 6px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-}
-
-.item-texto {
-  flex: 1; /* 👉 hace que el texto ocupe todo el espacio */
-  text-align: left;
-}
-
-    .total {
-      margin-top: 20px;
-      font-size: 20px;
-      font-weight: bold;
-      color: #2c3e50;
-    }
-
-    .eliminar {
-  background: #e74c3c;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  width: 28px;
-  height: 28px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: bold;
-}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registro Oficial de Liga</title>
+<style>
+body{font-family:Arial, sans-serif;background:#f2f4f8;margin:0;padding:20px}
+h1{text-align:center}
+.container{max-width:1000px;margin:auto}
+button{padding:6px 12px;border:none;border-radius:6px;cursor:pointer;margin:4px 0}
+.btn-main{background:#2563eb;color:white}
+.btn-edit{background:#16a34a;color:white}
+.btn-delete{background:#dc2626;color:white}
+.team{background:white;padding:12px;margin-bottom:15px;border-radius:10px;box-shadow:0 3px 8px rgba(0,0,0,0.1)}
+.team-header{font-weight:bold;font-size:18px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.players{display:none;margin-top:10px}
+.player{background:#e2e8f0;padding:6px;margin-bottom:5px;border-radius:6px;display:flex;justify-content:space-between;align-items:center}
+input{padding:6px;margin:3px 0}
+.admin-panel{display:none;background:white;padding:10px;border-radius:10px;margin-bottom:15px}
+</style>
 </head>
 <body>
 
 <div class="container">
-  <h1>🐔 AVICOLA EL PEDREGAL</h1>
+<h1>Sistema de Equipos y Jugadores</h1>
 
-  <label>CONCEPTO</label>
-  <select id="parte">
-    <option value="">Selecciona</option>
-    <option value="80">Pollo entero</option>
-    <option value="95">Surtido</option>
-    <option value="85">Alas</option>
-    <option value="100">Pierna y muslo</option>
-    <option value="135">Pechuga</option>
-    <option value="35">Retazo</option>
-    <option value="15">Menudencias</option>
-  </select>
+<button class="btn-edit" onclick="activarModoEdicion()">Agregar / Editar</button>
 
-  <label>Kilogramos</label>
-  <input type="number" id="kg" min="0.1" step="0.1" placeholder="Ej. 2.5">
+<div id="adminPanel" class="admin-panel">
+<h3>Agregar Equipo</h3>
+<input type="text" id="nuevoEquipo" placeholder="Nombre del equipo">
+<button class="btn-main" onclick="agregarEquipo()">Guardar Equipo</button>
+<hr>
+</div>
 
-  <button onclick="agregar()">➕ Agregar al pedido</button>
-
-  <ul id="lista"></ul>
-
-  <div class="total">
-    Total general: $<span id="total">0.00</span>
-  </div>
+<div id="listaEquipos"></div>
 </div>
 
 <script>
-  let totalGeneral = 0;
+const PASSWORD = "1872";
+let modoEdicion = false;
+let equipos = JSON.parse(localStorage.getItem("equipos")) || [];
 
-  function agregar() {
-    const select = document.getElementById("parte");
-    const kg = parseFloat(document.getElementById("kg").value);
-    const precioKg = parseFloat(select.value);
-    const nombre = select.options[select.selectedIndex].text;
+function guardarDatos(){
+localStorage.setItem("equipos", JSON.stringify(equipos));
+}
 
-    if (!precioKg || !kg || kg <= 0) {
-      alert("Selecciona un producto y cantidad válida");
-      return;
-    }
+function activarModoEdicion(){
+let pw = prompt("Ingrese contraseña:");
+if(pw === PASSWORD){
+modoEdicion = true;
+document.getElementById("adminPanel").style.display = "block";
+alert("Modo edición activado");
+render();
+}else if(pw !== null){
+alert("Contraseña incorrecta");
+}
+}
 
-    const subtotal = precioKg * kg;
-    totalGeneral += subtotal;
+function agregarEquipo(){
+if(!modoEdicion) return;
+let nombre = document.getElementById("nuevoEquipo").value.trim();
+if(nombre === "") return;
+equipos.push({nombre:nombre,jugadores:[]});
+document.getElementById("nuevoEquipo").value="";
+guardarDatos();
+render();
+}
 
-    const li = document.createElement("li");
-    li.innerHTML = `
-      ${nombre} (${kg} kg) - $${subtotal.toFixed(2)}
-      <button class="eliminar" onclick="eliminar(this, ${subtotal})">X</button>
-    `;
+function eliminarEquipo(index){
+if(!modoEdicion) return;
+if(confirm("¿Eliminar equipo completo?")){
+equipos.splice(index,1);
+guardarDatos();
+render();
+}
+}
 
-    document.getElementById("lista").appendChild(li);
-    document.getElementById("total").innerText = totalGeneral.toFixed(2);
+function agregarJugador(index){
+if(!modoEdicion) return;
+let nombre = document.getElementById("jugadorNombre-"+index).value.trim();
+let folio = document.getElementById("jugadorFolio-"+index).value.trim();
+if(nombre==="" || folio==="") return;
+equipos[index].jugadores.push({nombre:nombre,folio:folio});
+guardarDatos();
+render();
+}
 
-    document.getElementById("kg").value = "";
-    select.value = "";
-  }
+function eliminarJugador(teamIndex,playerIndex){
+if(!modoEdicion) return;
+if(confirm("¿Eliminar jugador?")){
+equipos[teamIndex].jugadores.splice(playerIndex,1);
+guardarDatos();
+render();
+}
+}
 
-  function eliminar(btn, subtotal) {
-    totalGeneral -= subtotal;
-    btn.parentElement.remove();
-    document.getElementById("total").innerText = totalGeneral.toFixed(2);
-  }
+function toggleJugadores(index){
+let div = document.getElementById("players-"+index);
+div.style.display = div.style.display === "none" ? "block" : "none";
+}
+
+function render(){
+let cont = document.getElementById("listaEquipos");
+cont.innerHTML="";
+
+if(equipos.length===0){
+cont.innerHTML="<p>No hay equipos registrados.</p>";
+return;
+}
+
+equipos.forEach((equipo,index)=>{
+let div = document.createElement("div");
+div.className="team";
+
+div.innerHTML=`
+<div class="team-header" onclick="toggleJugadores(${index})">
+<span>${equipo.nombre}</span>
+${modoEdicion?`<button class="btn-delete" onclick="event.stopPropagation(); eliminarEquipo(${index})">Eliminar</button>`:""}
+</div>
+<div class="players" id="players-${index}" style="display:none">
+${equipo.jugadores.length===0?"<p>Sin jugadores registrados</p>":""}
+${equipo.jugadores.map((j,i)=>`
+<div class="player">
+<span>${j.nombre}</span>
+<div>
+<strong>Folio: ${j.folio}</strong>
+${modoEdicion?`<button class="btn-delete" onclick="eliminarJugador(${index},${i})">X</button>`:""}
+</div>
+</div>
+`).join("")}
+${modoEdicion?`
+<hr>
+<input type="text" id="jugadorNombre-${index}" placeholder="Nombre jugador">
+<input type="text" id="jugadorFolio-${index}" placeholder="Folio">
+<br>
+<button class="btn-main" onclick="agregarJugador(${index})">Guardar Jugador</button>
+`:""}
+</div>
+`;
+
+cont.appendChild(div);
+});
+}
+
+render();
 </script>
 
 </body>
 </html>
+
