@@ -38,17 +38,14 @@ button{
     border-radius:5px;
 }
 .hidden{display:none;}
-.counter-btn{
-    padding:2px 6px;
-    font-weight:bold;
-}
 </style>
 </head>
 <body>
 
 <h1>Registro de Equipos</h1>
 
-<button id="btnModo">🔐 Activar Modo Edición</button>
+<button id="btnModo">🔐 Iniciar Sesión</button>
+
 <div id="adminPanel" class="hidden">
     <button id="btnAgregarEquipo">➕ Agregar Equipo</button>
 </div>
@@ -58,10 +55,11 @@ button{
 <!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 
 <script>
 
-// CONFIGURACIÓN
+// 🔐 CONFIGURACIÓN (USA TU NUEVA API KEY)
 var firebaseConfig = {
   apiKey: "AIzaSyC22q1zGNhakkDDCRRbgbtRalEdbkJjDdA",
   authDomain: "registro-2026-48054.firebaseapp.com",
@@ -72,23 +70,46 @@ var firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-var db = firebase.firestore();
 
-let modoEdicion = false;
+var db = firebase.firestore();
+var auth = firebase.auth();
+
+let usuarioLogueado = false;
 let equiposAbiertos = {};
 
-document.getElementById("btnModo").addEventListener("click", function(){
-    let pass = prompt("Ingrese contraseña:");
-    if(pass === "1872"){
-        modoEdicion = true;
+// 🔐 Detectar sesión
+auth.onAuthStateChanged(function(user) {
+    if (user) {
+        usuarioLogueado = true;
         document.getElementById("adminPanel").classList.remove("hidden");
-        alert("Modo edición activado");
-    }else{
-        alert("Contraseña incorrecta");
+        document.getElementById("btnModo").textContent = "🚪 Cerrar Sesión";
+    } else {
+        usuarioLogueado = false;
+        document.getElementById("adminPanel").classList.add("hidden");
+        document.getElementById("btnModo").textContent = "🔐 Iniciar Sesión";
     }
 });
 
+// 🔐 Login / Logout
+document.getElementById("btnModo").addEventListener("click", function(){
+
+    if(usuarioLogueado){
+        auth.signOut();
+        return;
+    }
+
+    let email = prompt("Correo:");
+    let password = prompt("Contraseña:");
+
+    auth.signInWithEmailAndPassword(email, password)
+    .then(()=> alert("Sesión iniciada"))
+    .catch(()=> alert("Error en credenciales"));
+});
+
+// ➕ Agregar equipo
 document.getElementById("btnAgregarEquipo").addEventListener("click", function(){
+    if(!usuarioLogueado) return;
+
     let nombre = prompt("Nombre del equipo:");
     if(nombre){
         db.collection("equipos").add({
@@ -98,6 +119,8 @@ document.getElementById("btnAgregarEquipo").addEventListener("click", function()
 });
 
 function agregarJugador(idEquipo){
+    if(!usuarioLogueado) return;
+
     let nombre = prompt("Nombre del jugador:");
     let folio = prompt("Folio:");
     if(nombre && folio){
@@ -110,8 +133,10 @@ function agregarJugador(idEquipo){
 }
 
 function cambiarPartidos(idEquipo,idJugador,cambio){
-    if(!modoEdicion) return;
+    if(!usuarioLogueado) return;
+
     let ref = db.collection("equipos").doc(idEquipo).collection("jugadores").doc(idJugador);
+
     ref.get().then(doc=>{
         let nuevo = doc.data().partidos + cambio;
         if(nuevo < 0) nuevo = 0;
@@ -120,12 +145,16 @@ function cambiarPartidos(idEquipo,idJugador,cambio){
 }
 
 function eliminarJugador(idEquipo,idJugador){
+    if(!usuarioLogueado) return;
+
     if(confirm("¿Eliminar jugador?")){
         db.collection("equipos").doc(idEquipo).collection("jugadores").doc(idJugador).delete();
     }
 }
 
 function eliminarEquipo(idEquipo){
+    if(!usuarioLogueado) return;
+
     if(confirm("¿Eliminar equipo?")){
         db.collection("equipos").doc(idEquipo).delete();
     }
@@ -138,10 +167,10 @@ function toggleJugadores(id){
 
 function renderizar(){
     let contenedor = document.getElementById("contenedorEquipos");
-    contenedor.innerHTML = "";
 
     db.collection("equipos").onSnapshot(snapshot=>{
         contenedor.innerHTML = "";
+
         snapshot.forEach(doc=>{
             let idEquipo = doc.id;
             let equipo = doc.data();
@@ -154,7 +183,7 @@ function renderizar(){
             titulo.onclick = ()=>toggleJugadores(idEquipo);
             divEquipo.appendChild(titulo);
 
-            if(modoEdicion){
+            if(usuarioLogueado){
                 let btnAdd = document.createElement("button");
                 btnAdd.textContent="➕ Agregar Jugador";
                 btnAdd.onclick=()=>agregarJugador(idEquipo);
@@ -168,6 +197,7 @@ function renderizar(){
 
             let divJugadores=document.createElement("div");
             divJugadores.className="players";
+
             if(equiposAbiertos[idEquipo]){
                 divJugadores.style.display="block";
             }
@@ -175,6 +205,7 @@ function renderizar(){
             db.collection("equipos").doc(idEquipo).collection("jugadores")
             .onSnapshot(jugSnapshot=>{
                 divJugadores.innerHTML="";
+
                 jugSnapshot.forEach(jugDoc=>{
                     let jugador=jugDoc.data();
                     let idJugador=jugDoc.id;
@@ -187,7 +218,7 @@ function renderizar(){
                         Partidos: ${jugador.partidos}
                     `;
 
-                    if(modoEdicion){
+                    if(usuarioLogueado){
                         let mas=document.createElement("button");
                         mas.textContent="⬆";
                         mas.onclick=()=>cambiarPartidos(idEquipo,idJugador,1);
