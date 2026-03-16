@@ -5,18 +5,40 @@
 <title>Registro Liga Online</title>
 
 <style>
+
 body{
     font-family: Arial;
     background:#f4f4f4;
     padding:20px;
+    margin:0;
 }
-h1{text-align:center;}
 
-input{
+h1{
+    text-align:center;
+    margin-top:80px;
+}
+
+.barraBuscador{
+    position:fixed;
+    top:0;
+    left:0;
     width:100%;
+    background:#ffffff;
     padding:10px;
-    margin:10px 0;
+    box-shadow:0 2px 5px rgba(0,0,0,0.2);
+    z-index:1000;
+}
+
+.barraBuscador input{
+    width:60%;
+    padding:10px;
     font-size:16px;
+}
+
+.barraBuscador button{
+    padding:8px 12px;
+    margin-left:5px;
+    cursor:pointer;
 }
 
 button{
@@ -51,11 +73,13 @@ button{
 }
 
 .hidden{display:none;}
+
 </style>
 </head>
+
 <body>
 
-<h1>Registro de Equipos</h1>
+<div class="barraBuscador">
 
 <input type="text" id="buscador" placeholder="🔎 Buscar jugador...">
 
@@ -64,12 +88,17 @@ button{
 
 <button id="btnModo">🔐 Iniciar Sesión</button>
 
-<div id="adminPanel" class="hidden">
+<span id="adminPanel" class="hidden">
 <button id="btnAgregarEquipo">➕ Agregar Equipo</button>
+</span>
+
 </div>
+
+<h1>Registro de Equipos</h1>
 
 <div id="contenedorEquipos"></div>
 
+<!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
@@ -77,9 +106,12 @@ button{
 <script>
 
 var firebaseConfig = {
-apiKey: "TU API KEY",
+apiKey: "AIzaSyC22q1zGNhakkDDCRRbgbtRalEdbkJjDdA",
 authDomain: "registro-2026-48054.firebaseapp.com",
 projectId: "registro-2026-48054",
+storageBucket: "registro-2026-48054.firebasestorage.app",
+messagingSenderId: "615636276338",
+appId: "1:615636276338:web:ce0386171a3766388bdeeb"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -171,6 +203,53 @@ partidos:0
 
 }
 
+function cambiarPartidos(idEquipo,idJugador,cambio){
+
+if(!usuarioLogueado)return;
+
+let ref=db.collection("equipos")
+.doc(idEquipo)
+.collection("jugadores")
+.doc(idJugador);
+
+ref.get().then(doc=>{
+
+let nuevo=doc.data().partidos + cambio;
+
+if(nuevo<0)nuevo=0;
+
+ref.update({partidos:nuevo});
+
+});
+
+}
+
+function eliminarJugador(idEquipo,idJugador){
+
+if(!usuarioLogueado)return;
+
+if(confirm("¿Eliminar jugador?")){
+
+db.collection("equipos")
+.doc(idEquipo)
+.collection("jugadores")
+.doc(idJugador)
+.delete();
+
+}
+
+}
+
+function eliminarEquipo(idEquipo){
+
+if(!usuarioLogueado)return;
+
+if(confirm("¿Eliminar equipo?")){
+db.collection("equipos").doc(idEquipo).delete();
+}
+
+}
+
 function toggleJugadores(id){
 equiposAbiertos[id]=!equiposAbiertos[id];
 renderizar();
@@ -206,6 +285,12 @@ btnAdd.onclick=()=>agregarJugador(idEquipo);
 
 divEquipo.appendChild(btnAdd);
 
+let btnDel=document.createElement("button");
+btnDel.textContent="🗑 Eliminar Equipo";
+btnDel.onclick=()=>eliminarEquipo(idEquipo);
+
+divEquipo.appendChild(btnDel);
+
 }
 
 let divJugadores=document.createElement("div");
@@ -226,6 +311,7 @@ divJugadores.innerHTML="";
 jugSnapshot.forEach(jugDoc=>{
 
 let jugador=jugDoc.data();
+let idJugador=jugDoc.id;
 
 if(filtroJugador && !jugador.nombre.toLowerCase().includes(filtroJugador)){
 return;
@@ -235,10 +321,30 @@ let divJugador=document.createElement("div");
 divJugador.className="player";
 
 divJugador.innerHTML=`
-<strong>${jugador.nombre}</strong>
-| Folio: ${jugador.folio}
-| Partidos: ${jugador.partidos}
+<strong>${jugador.nombre}</strong> |
+Folio: ${jugador.folio} |
+Partidos: ${jugador.partidos}
 `;
+
+if(usuarioLogueado){
+
+let mas=document.createElement("button");
+mas.textContent="⬆";
+mas.onclick=()=>cambiarPartidos(idEquipo,idJugador,1);
+
+let menos=document.createElement("button");
+menos.textContent="⬇";
+menos.onclick=()=>cambiarPartidos(idEquipo,idJugador,-1);
+
+let eliminar=document.createElement("button");
+eliminar.textContent="❌";
+eliminar.onclick=()=>eliminarJugador(idEquipo,idJugador);
+
+divJugador.appendChild(mas);
+divJugador.appendChild(menos);
+divJugador.appendChild(eliminar);
+
+}
 
 divJugadores.appendChild(divJugador);
 
