@@ -9,13 +9,13 @@
 body{
     font-family: Arial;
     background:#f4f4f4;
-    padding:20px;
     margin:0;
+    padding:20px;
+    padding-top:100px;
 }
 
 h1{
     text-align:center;
-    margin-top:80px;
 }
 
 .barraBuscador{
@@ -72,7 +72,9 @@ button{
     border-radius:5px;
 }
 
-.hidden{display:none;}
+.hidden{
+display:none;
+}
 
 </style>
 </head>
@@ -98,7 +100,6 @@ button{
 
 <div id="contenedorEquipos"></div>
 
-<!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
