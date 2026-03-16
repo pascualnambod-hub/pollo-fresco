@@ -59,29 +59,27 @@ button{
 
 <input type="text" id="buscador" placeholder="🔎 Buscar jugador...">
 
+<button onclick="ordenAZ()">A → Z</button>
+<button onclick="ordenZA()">Z → A</button>
+
 <button id="btnModo">🔐 Iniciar Sesión</button>
 
 <div id="adminPanel" class="hidden">
-    <button id="btnAgregarEquipo">➕ Agregar Equipo</button>
+<button id="btnAgregarEquipo">➕ Agregar Equipo</button>
 </div>
 
 <div id="contenedorEquipos"></div>
 
-<!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 
 <script>
 
-// CONFIG FIREBASE
 var firebaseConfig = {
-  apiKey: "AIzaSyC22q1zGNhakkDDCRRbgbtRalEdbkJjDdA",
-  authDomain: "registro-2026-48054.firebaseapp.com",
-  projectId: "registro-2026-48054",
-  storageBucket: "registro-2026-48054.firebasestorage.app",
-  messagingSenderId: "615636276338",
-  appId: "1:615636276338:web:ce0386171a3766388bdeeb"
+apiKey: "TU API KEY",
+authDomain: "registro-2026-48054.firebaseapp.com",
+projectId: "registro-2026-48054",
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -89,155 +87,98 @@ firebase.initializeApp(firebaseConfig);
 var db = firebase.firestore();
 var auth = firebase.auth();
 
-let usuarioLogueado = false;
-let equiposAbiertos = {};
-let filtroJugador = "";
+let usuarioLogueado=false;
+let equiposAbiertos={};
+let filtroJugador="";
+let orden="asc";
 
-// BUSCADOR
 document.getElementById("buscador").addEventListener("input",function(){
-    filtroJugador = this.value.toLowerCase();
-    renderizar();
+filtroJugador=this.value.toLowerCase();
+renderizar();
 });
 
-// DETECTAR SESION
-auth.onAuthStateChanged(function(user) {
+function ordenAZ(){
+orden="asc";
+renderizar();
+}
 
-    if (user) {
-        usuarioLogueado = true;
-        document.getElementById("adminPanel").classList.remove("hidden");
-        document.getElementById("btnModo").textContent = "🚪 Cerrar Sesión";
-    } else {
-        usuarioLogueado = false;
-        document.getElementById("adminPanel").classList.add("hidden");
-        document.getElementById("btnModo").textContent = "🔐 Iniciar Sesión";
-    }
+function ordenZA(){
+orden="desc";
+renderizar();
+}
+
+auth.onAuthStateChanged(function(user){
+
+if(user){
+usuarioLogueado=true;
+document.getElementById("adminPanel").classList.remove("hidden");
+document.getElementById("btnModo").textContent="🚪 Cerrar Sesión";
+}else{
+usuarioLogueado=false;
+document.getElementById("adminPanel").classList.add("hidden");
+document.getElementById("btnModo").textContent="🔐 Iniciar Sesión";
+}
 
 });
 
-// LOGIN / LOGOUT
 document.getElementById("btnModo").addEventListener("click",function(){
 
-    if(usuarioLogueado){
-        auth.signOut();
-        return;
-    }
+if(usuarioLogueado){
+auth.signOut();
+return;
+}
 
-    let email = prompt("Correo:");
-    let password = prompt("Contraseña:");
+let email=prompt("Correo:");
+let password=prompt("Contraseña:");
 
-    auth.signInWithEmailAndPassword(email,password)
-    .then(()=>alert("Sesión iniciada"))
-    .catch(()=>alert("Error en credenciales"));
+auth.signInWithEmailAndPassword(email,password)
+.then(()=>alert("Sesión iniciada"))
+.catch(()=>alert("Error en credenciales"));
 
 });
 
-// AGREGAR EQUIPO
 document.getElementById("btnAgregarEquipo").addEventListener("click",function(){
 
-    if(!usuarioLogueado) return;
+if(!usuarioLogueado)return;
 
-    let nombre = prompt("Nombre del equipo:");
+let nombre=prompt("Nombre del equipo:");
 
-    if(nombre){
-        db.collection("equipos").add({
-            nombre:nombre
-        });
-    }
+if(nombre){
+db.collection("equipos").add({nombre:nombre});
+}
 
 });
 
-// AGREGAR JUGADOR
 function agregarJugador(idEquipo){
 
-    if(!usuarioLogueado) return;
+if(!usuarioLogueado)return;
 
-    let nombre = prompt("Nombre del jugador:");
-    let folio = prompt("Folio:");
+let nombre=prompt("Nombre del jugador:");
+let folio=prompt("Folio:");
 
-    if(nombre && folio){
+if(nombre && folio){
 
-        db.collection("equipos")
-        .doc(idEquipo)
-        .collection("jugadores")
-        .add({
-            nombre:nombre,
-            folio:folio,
-            partidos:0
-        });
-
-    }
+db.collection("equipos")
+.doc(idEquipo)
+.collection("jugadores")
+.add({
+nombre:nombre,
+folio:folio,
+partidos:0
+});
 
 }
 
-// CAMBIAR PARTIDOS
-function cambiarPartidos(idEquipo,idJugador,cambio){
-
-    if(!usuarioLogueado) return;
-
-    let ref = db.collection("equipos")
-    .doc(idEquipo)
-    .collection("jugadores")
-    .doc(idJugador);
-
-    ref.get().then(doc=>{
-
-        let nuevo = doc.data().partidos + cambio;
-
-        if(nuevo < 0) nuevo = 0;
-
-        ref.update({
-            partidos:nuevo
-        });
-
-    });
-
 }
 
-// ELIMINAR JUGADOR
-function eliminarJugador(idEquipo,idJugador){
-
-    if(!usuarioLogueado) return;
-
-    if(confirm("¿Eliminar jugador?")){
-
-        db.collection("equipos")
-        .doc(idEquipo)
-        .collection("jugadores")
-        .doc(idJugador)
-        .delete();
-
-    }
-
-}
-
-// ELIMINAR EQUIPO
-function eliminarEquipo(idEquipo){
-
-    if(!usuarioLogueado) return;
-
-    if(confirm("¿Eliminar equipo?")){
-
-        db.collection("equipos")
-        .doc(idEquipo)
-        .delete();
-
-    }
-
-}
-
-// ABRIR / CERRAR LISTA
 function toggleJugadores(id){
-
-    equiposAbiertos[id] = !equiposAbiertos[id];
-
-    renderizar();
-
+equiposAbiertos[id]=!equiposAbiertos[id];
+renderizar();
 }
 
-// RENDERIZAR
 function renderizar(){
 
-let contenedor = document.getElementById("contenedorEquipos");
+let contenedor=document.getElementById("contenedorEquipos");
 
 db.collection("equipos").onSnapshot(snapshot=>{
 
@@ -245,8 +186,8 @@ contenedor.innerHTML="";
 
 snapshot.forEach(doc=>{
 
-let idEquipo = doc.id;
-let equipo = doc.data();
+let idEquipo=doc.id;
+let equipo=doc.data();
 
 let divEquipo=document.createElement("div");
 divEquipo.className="team";
@@ -265,12 +206,6 @@ btnAdd.onclick=()=>agregarJugador(idEquipo);
 
 divEquipo.appendChild(btnAdd);
 
-let btnDel=document.createElement("button");
-btnDel.textContent="🗑 Eliminar Equipo";
-btnDel.onclick=()=>eliminarEquipo(idEquipo);
-
-divEquipo.appendChild(btnDel);
-
 }
 
 let divJugadores=document.createElement("div");
@@ -283,17 +218,15 @@ divJugadores.style.display="block";
 db.collection("equipos")
 .doc(idEquipo)
 .collection("jugadores")
-.orderBy("nombre")
+.orderBy("nombre",orden)
 .onSnapshot(jugSnapshot=>{
 
 divJugadores.innerHTML="";
 
 jugSnapshot.forEach(jugDoc=>{
 
-let jugador = jugDoc.data();
-let idJugador = jugDoc.id;
+let jugador=jugDoc.data();
 
-// FILTRO BUSCADOR
 if(filtroJugador && !jugador.nombre.toLowerCase().includes(filtroJugador)){
 return;
 }
@@ -302,30 +235,10 @@ let divJugador=document.createElement("div");
 divJugador.className="player";
 
 divJugador.innerHTML=`
-<strong>${jugador.nombre}</strong> |
-Folio: ${jugador.folio} |
-Partidos: ${jugador.partidos}
+<strong>${jugador.nombre}</strong>
+| Folio: ${jugador.folio}
+| Partidos: ${jugador.partidos}
 `;
-
-if(usuarioLogueado){
-
-let mas=document.createElement("button");
-mas.textContent="⬆";
-mas.onclick=()=>cambiarPartidos(idEquipo,idJugador,1);
-
-let menos=document.createElement("button");
-menos.textContent="⬇";
-menos.onclick=()=>cambiarPartidos(idEquipo,idJugador,-1);
-
-let eliminar=document.createElement("button");
-eliminar.textContent="❌";
-eliminar.onclick=()=>eliminarJugador(idEquipo,idJugador);
-
-divJugador.appendChild(mas);
-divJugador.appendChild(menos);
-divJugador.appendChild(eliminar);
-
-}
 
 divJugadores.appendChild(divJugador);
 
