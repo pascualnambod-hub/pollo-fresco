@@ -91,7 +91,13 @@ display:none;
 <button id="btnModo">🔐 Iniciar Sesión</button>
 
 <span id="adminPanel" class="hidden">
+
 <button id="btnAgregarEquipo">➕ Agregar Equipo</button>
+
+<button onclick="exportarExcel()">
+📥 Exportar Excel
+</button>
+
 </span>
 
 </div>
@@ -104,6 +110,7 @@ display:none;
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script>
 
 var firebaseConfig = {
@@ -361,7 +368,56 @@ contenedor.appendChild(divEquipo);
 });
 
 }
+async function exportarExcel(){
 
+let datos=[];
+
+const equipos=await db.collection("equipos").get();
+
+for(const equipoDoc of equipos.docs){
+
+    const nombreEquipo=equipoDoc.data().nombre;
+
+    const jugadores=await db.collection("equipos")
+    .doc(equipoDoc.id)
+    .collection("jugadores")
+    .orderBy("nombre")
+    .get();
+
+    jugadores.forEach(jugador=>{
+
+        const j=jugador.data();
+
+        datos.push({
+
+            Equipo:nombreEquipo,
+
+            Jugador:j.nombre,
+
+            Folio:j.folio,
+
+            Partidos:j.partidos
+
+        });
+
+    });
+
+}
+
+if(datos.length==0){
+    alert("No existen jugadores registrados.");
+    return;
+}
+
+const hoja=XLSX.utils.json_to_sheet(datos);
+
+const libro=XLSX.utils.book_new();
+
+XLSX.utils.book_append_sheet(libro,hoja,"Jugadores");
+
+XLSX.writeFile(libro,"Registro_Jugadores.xlsx");
+
+}
 renderizar();
 
 </script>
