@@ -94,7 +94,7 @@ display:none;
 
 <button id="btnAgregarEquipo">➕ Agregar Equipo</button>
 
-<button onclick="exportarExcel()">
+<button onclick="exportarCSV()">
 📥 Exportar Excel
 </button>
 
@@ -110,7 +110,6 @@ display:none;
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 
 var firebaseConfig = {
@@ -368,54 +367,66 @@ contenedor.appendChild(divEquipo);
 });
 
 }
-async function exportarExcel(){
+async function exportarCSV() {
 
-let datos=[];
+    try {
 
-const equipos=await db.collection("equipos").get();
+        let contenido = "Equipo,Jugador,Folio,Partidos\n";
 
-for(const equipoDoc of equipos.docs){
+        const equipos = await db.collection("equipos").get();
 
-    const nombreEquipo=equipoDoc.data().nombre;
+        for (const equipoDoc of equipos.docs) {
 
-    const jugadores=await db.collection("equipos")
-    .doc(equipoDoc.id)
-    .collection("jugadores")
-    .orderBy("nombre")
-    .get();
+            const nombreEquipo = equipoDoc.data().nombre;
 
-    jugadores.forEach(jugador=>{
+            const jugadores = await db.collection("equipos")
+                .doc(equipoDoc.id)
+                .collection("jugadores")
+                .orderBy("nombre")
+                .get();
 
-        const j=jugador.data();
+            jugadores.forEach(doc => {
 
-        datos.push({
+                const jugador = doc.data();
 
-            Equipo:nombreEquipo,
+                contenido += `"${nombreEquipo}","${jugador.nombre}","${jugador.folio}",${jugador.partidos}\n`;
 
-            Jugador:j.nombre,
+            });
 
-            Folio:j.folio,
+        }
 
-            Partidos:j.partidos
+        if (contenido === "Equipo,Jugador,Folio,Partidos\n") {
+            alert("No existen jugadores registrados.");
+            return;
+        }
 
-        });
+        const blob = new Blob(
+            ["\uFEFF" + contenido],
+            { type: "text/csv;charset=utf-8;" }
+        );
 
-    });
+        const url = URL.createObjectURL(blob);
 
-}
+        const a = document.createElement("a");
 
-if(datos.length==0){
-    alert("No existen jugadores registrados.");
-    return;
-}
+        a.href = url;
+        a.download = "Registro_Jugadores.csv";
 
-const hoja=XLSX.utils.json_to_sheet(datos);
+        document.body.appendChild(a);
 
-const libro=XLSX.utils.book_new();
+        a.click();
 
-XLSX.utils.book_append_sheet(libro,hoja,"Jugadores");
+        document.body.removeChild(a);
 
-XLSX.writeFile(libro,"Registro_Jugadores.xlsx");
+        URL.revokeObjectURL(url);
+
+    } catch (e) {
+
+        console.error(e);
+
+        alert("Error al exportar: " + e.message);
+
+    }
 
 }
 renderizar();
